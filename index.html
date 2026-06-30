@@ -990,15 +990,51 @@ function drawCropped(ctx, img, x, y, w, h, fit) {
 }
 
 function wrapTextLines(text, maxW, ctx) {
-  const chars = Array.from(text);
-  let lines = [], cur = '';
-  for (let c of chars) {
-    const test = cur + c;
-    if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = c; }
-    else cur = test;
-  }
-  if (cur) lines.push(cur);
+  // Respect manual line breaks (Enter key) first, then word/char-wrap each paragraph by width
+  const paragraphs = String(text).split('\n');
+  let lines = [];
+  paragraphs.forEach(para => {
+    if (para === '') { lines.push(''); return; }
+    const chars = Array.from(para);
+    let cur = '';
+    for (let c of chars) {
+      const test = cur + c;
+      if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = c; }
+      else cur = test;
+    }
+    lines.push(cur);
+  });
   return lines;
+}
+
+// Fits a headline into a given box: shrinks font size for long text, keeps the
+// chosen size for short text (so a 1-line headline doesn't look tiny), and as a
+// last resort truncates with an ellipsis instead of silently cutting text off.
+function fitTextBlock(ctx, text, maxW, maxH, fontFamily, baseSize, opts) {
+  opts = opts || {};
+  const weight = opts.weight || '800';
+  const minSize = opts.minSize || 22;
+  const lhMult = opts.lineHeightMult || 1.12;
+  let size = baseSize, lines, lineH, blockH;
+  while (true) {
+    ctx.font = `${weight} ${size}px ${fontFamily}, sans-serif`;
+    lines = wrapTextLines(text, maxW, ctx);
+    lineH = size * lhMult;
+    blockH = lines.length * lineH;
+    if (blockH <= maxH || size <= minSize) break;
+    size -= 2;
+  }
+  const maxLines = Math.max(1, Math.floor(maxH / lineH));
+  if (lines.length > maxLines) {
+    lines = lines.slice(0, maxLines);
+    let last = lines[maxLines - 1] || '';
+    while (ctx.measureText(last + '…').width > maxW && last.length > 1) {
+      last = last.slice(0, -1);
+    }
+    lines[maxLines - 1] = last + '…';
+  }
+  ctx.font = `${weight} ${size}px ${fontFamily}, sans-serif`;
+  return { size, lines, lineH, blockH: lines.length * lineH };
 }
 
 // Rounded rect helper
@@ -1187,13 +1223,14 @@ function drawQuoteCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, qu
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   ctx.fillText('"', W*0.06, quoteTop - 36);
 
-  ctx.font = `700 ${Math.min(fontSize, 40)}px ${fontFamily}, sans-serif`;
+  const footY = H - 72;
+  const speakerBlockH = speakerOn ? 110 : 20;
+  const availQuoteH = (footY - 40) - quoteTop - speakerBlockH;
+  const fitQ = fitTextBlock(ctx, quoteText, W * 0.82, availQuoteH, fontFamily, Math.min(fontSize, 40), { weight: '700', minSize: 24, lineHeightMult: 1.34 });
   ctx.fillStyle = '#1c1c1c';
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  const qLineH = Math.min(fontSize, 40) * 1.34;
-  const qLines = wrapTextLines(quoteText, W * 0.82, ctx);
   let qy = quoteTop;
-  qLines.forEach(l => { ctx.fillText(l, cx, qy); qy += qLineH; });
+  fitQ.lines.forEach(l => { ctx.fillText(l, cx, qy); qy += fitQ.lineH; });
 
   // Speaker name + title
   if (speakerOn) {
@@ -1216,7 +1253,6 @@ function drawQuoteCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, qu
   }
 
   // Light footer with social row
-  const footY = H - 72;
   ctx.strokeStyle = hexToRgba(accentColor, 0.5); ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(0, footY); ctx.lineTo(W, footY); ctx.stroke();
 
@@ -1311,16 +1347,14 @@ function drawFrameCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, he
   ctx.fillStyle = accent2; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.fillText('● ' + ((badgeText && badgeText.trim()) ? badgeText.toUpperCase() : 'SPORTS NEWS'), cardX, textTop);
 
-  ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  const lineH = fontSize * 1.14;
-  const lines = wrapTextLines(headline, cardW, ctx).slice(0, 3);
+  const footY = H - 70;
+  const fitF = fitTextBlock(ctx, headline, cardW, (footY - 24) - (textTop + 16), fontFamily, fontSize, { minSize: 22, lineHeightMult: 1.14 });
   let ty = textTop + 16;
-  lines.forEach(l => { ctx.fillText(l, cardX, ty); ty += lineH; });
+  fitF.lines.forEach(l => { ctx.fillText(l, cardX, ty); ty += fitF.lineH; });
 
   // footer: channel + date pill, on the gradient background
-  const footY = H - 70;
   ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(cardX, footY); ctx.lineTo(W - cardX, footY); ctx.stroke();
 
@@ -1476,15 +1510,14 @@ function drawMagazineCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize,
 
   // headline in dark editorial type
   ctx.fillStyle = '#15151a';
-  ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  const lineH = fontSize * 1.14;
-  const lines = wrapTextLines(headline, W - 72, ctx).slice(0, 3);
-  let ty = PANEL_Y - 26 + 42;
-  lines.forEach(l => { ctx.fillText(l, 36, ty); ty += lineH; });
+  const footY = H - BRAND_H;
+  const tyStart = PANEL_Y - 26 + 42;
+  const fitM = fitTextBlock(ctx, headline, W - 72, (footY - 16) - tyStart, fontFamily, fontSize, { minSize: 22, lineHeightMult: 1.14 });
+  let ty = tyStart;
+  fitM.lines.forEach(l => { ctx.fillText(l, 36, ty); ty += fitM.lineH; });
 
   // footer: channel + date, separated by hairline
-  const footY = H - BRAND_H;
   ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(36, footY); ctx.lineTo(W - 36, footY); ctx.stroke();
 
@@ -1569,16 +1602,14 @@ function drawLightCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, he
   ctx.fillStyle = accentColor; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
   ctx.fillText('● ' + ((badgeText && badgeText.trim()) ? badgeText.toUpperCase() : 'SPORTS NEWS'), cardX, textTop);
 
-  ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
   ctx.fillStyle = '#16161c';
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-  const lineH = fontSize * 1.15;
-  const lines = wrapTextLines(headline, cardW, ctx).slice(0, 3);
+  const footY = H - 72;
+  const fitL = fitTextBlock(ctx, headline, cardW, (footY - 20) - (textTop + 16), fontFamily, fontSize, { minSize: 22, lineHeightMult: 1.15 });
   let ty = textTop + 16;
-  lines.forEach(l => { ctx.fillText(l, cardX, ty); ty += lineH; });
+  fitL.lines.forEach(l => { ctx.fillText(l, cardX, ty); ty += fitL.lineH; });
 
   // footer
-  const footY = H - 72;
   ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(cardX, footY); ctx.lineTo(W - cardX, footY); ctx.stroke();
 
@@ -1944,22 +1975,17 @@ function generate() {
     ctx.fillText(kickerText, 36, hl_overlay_y + 36);
 
     ctx.fillStyle = hlColor;
-    ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
-    const lineH = fontSize * 1.12;
-    const lines = wrapTextLines(headline, W - 80, ctx);
+    const fitO = fitTextBlock(ctx, headline, W - 80, HL_H - 60, fontFamily, fontSize, { minSize: 22, lineHeightMult: 1.12 });
     let ty = hl_overlay_y + 50;
-    lines.forEach((l) => { ctx.fillText(l, 36, ty); ty += lineH; });
+    fitO.lines.forEach((l) => { ctx.fillText(l, 36, ty); ty += fitO.lineH; });
 
   } else if (layout === 'poster') {
     // Full-bleed poster: giant bottom-anchored headline, no panel box
     const bottomLimit = H - AD_H - AD_GAP - BRAND_H - 36;
-    const posterSize = Math.round(fontSize * 1.35);
-    ctx.font = `800 ${posterSize}px ${fontFamily}, sans-serif`;
-    const pLineH = posterSize * 1.05;
-    const pLines = wrapTextLines(headline, W - 72, ctx).slice(0, 4);
-    const pBlockH = pLines.length * pLineH;
-    let py = bottomLimit - pBlockH;
+    const posterBase = Math.round(fontSize * 1.35);
+    const fitP = fitTextBlock(ctx, headline, W - 72, bottomLimit - 110, fontFamily, posterBase, { minSize: 28, lineHeightMult: 1.05 });
+    let py = bottomLimit - fitP.blockH;
 
     // small accent rule above headline
     ctx.fillStyle = accentColor;
@@ -1969,10 +1995,10 @@ function generate() {
     ctx.fillText(kickerText, 112, py - 21);
 
     ctx.fillStyle = hlColor;
-    ctx.font = `800 ${posterSize}px ${fontFamily}, sans-serif`;
+    ctx.font = `800 ${fitP.size}px ${fontFamily}, sans-serif`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'top';
     ctx.shadowColor = 'rgba(0,0,0,0.55)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 4;
-    pLines.forEach((l) => { ctx.fillText(l, 36, py); py += pLineH; });
+    fitP.lines.forEach((l) => { ctx.fillText(l, 36, py); py += fitP.lineH; });
     ctx.shadowColor = 'transparent'; ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
   } else {
@@ -2008,25 +2034,18 @@ function generate() {
 
     // headline
     ctx.fillStyle = hlColor;
-    ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
     ctx.textBaseline = 'top';
-    const lineH2 = fontSize * 1.1;
-    const maxLines = 3;
     const availTop = HL_Y + 46, availH = HL_H - 56;
     if (hlAlign === 'center') {
       ctx.textAlign = 'center';
-      const lines2c = wrapTextLines(headline, W - 100, ctx);
-      const shownC = lines2c.slice(0, maxLines);
-      const blockHc = shownC.length * lineH2;
-      let syc = availTop + Math.max(0, (availH - blockHc) / 2);
-      shownC.forEach((l) => { ctx.fillText(l, W/2, syc); syc += lineH2; });
+      const fitC = fitTextBlock(ctx, headline, W - 100, availH, fontFamily, fontSize, { minSize: 22, lineHeightMult: 1.1 });
+      let syc = availTop + Math.max(0, (availH - fitC.blockH) / 2);
+      fitC.lines.forEach((l) => { ctx.fillText(l, W/2, syc); syc += fitC.lineH; });
     } else {
       ctx.textAlign = 'left';
-      const lines2 = wrapTextLines(headline, W - 76, ctx);
-      const shown = lines2.slice(0, maxLines);
-      const blockH = shown.length * lineH2;
-      let sy = availTop + Math.max(0, (availH - blockH) / 2);
-      shown.forEach((l) => { ctx.fillText(l, 38, sy); sy += lineH2; });
+      const fitL2 = fitTextBlock(ctx, headline, W - 76, availH, fontFamily, fontSize, { minSize: 22, lineHeightMult: 1.1 });
+      let sy = availTop + Math.max(0, (availH - fitL2.blockH) / 2);
+      fitL2.lines.forEach((l) => { ctx.fillText(l, 38, sy); sy += fitL2.lineH; });
     }
 
     // decorative corner accent triangle
