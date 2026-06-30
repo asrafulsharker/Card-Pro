@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>News Card Studio Pro for QF</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Anton&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Montserrat:wght@600;700;800;900&family=Poppins:wght@500;600;700;800&family=Archivo+Black&family=Teko:wght@600;700&family=Rajdhani:wght@600;700&family=Russo+One&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Anton&family=Oswald:wght@400;500;600;700&family=Bebas+Neue&family=Montserrat:wght@600;700;800;900&family=Poppins:wght@500;600;700;800&family=Archivo+Black&family=Teko:wght@600;700&family=Rajdhani:wght@600;700&family=Russo+One&family=Hind+Siliguri:wght@500;600;700&family=Noto+Sans+Bengali:wght@500;600;700;800&family=Baloo+Da+2:wght@600;700;800&family=Tiro+Bangla&family=Anek+Bangla:wght@600;700;800&display=swap');
 
   :root {
     --bg: #0b0b0d;
@@ -21,6 +21,16 @@
     --radius: 10px;
   }
 
+  body[data-theme="light"] {
+    --bg: #f3f3f6;
+    --surface: #ffffff;
+    --surface2: #f3f3f7;
+    --border: #e4e4ea;
+    --border2: #d3d3dc;
+    --text: #18181c;
+    --muted: #6c6c78;
+  }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
@@ -29,7 +39,13 @@
     color: var(--text);
     min-height: 100vh;
     padding: 24px 20px;
+    transition: background 0.25s, color 0.25s;
   }
+  body[data-theme="light"] {
+    background: radial-gradient(circle at 20% 0%, #ffffff 0%, var(--bg) 60%);
+  }
+  body[data-theme="light"] canvas { box-shadow: 0 25px 70px rgba(0,0,0,0.16); }
+  body[data-theme="light"] .upload-zone:hover { background: rgba(255,59,78,0.06); }
 
   /* ── Header ── nirob */
   .header { text-align: center; margin-bottom: 28px; }
@@ -67,6 +83,11 @@
   input[type="text"]:focus, textarea:focus, select:focus { border-color: var(--accent); }
   select option { background: var(--surface2); }
   textarea { resize: vertical; min-height: 64px; line-height: 1.5; }
+
+  .char-count { font-size: 10.5px; color: var(--muted); text-align: right; margin-top: -3px; }
+  .char-count.over { color: var(--accent); font-weight: 600; }
+  .field-foot { display: flex; align-items: center; justify-content: space-between; margin-top: -3px; }
+  .field-foot .hint { font-size: 10.5px; color: var(--muted); }
 
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
@@ -146,23 +167,103 @@
   .theme-swatch .sw-dots { display: flex; gap: 3px; }
   .theme-swatch .sw-dots span { width: 14px; height: 14px; border-radius: 50%; display: block; }
   .theme-swatch .sw-name { font-size: 11.5px; font-weight: 600; color: var(--text); }
+
+  /* ── Site theme toggle (light/dark banner) ── */
+  .header-row { display: flex; align-items: center; justify-content: center; gap: 14px; position: relative; max-width: 1320px; margin: 0 auto; }
+  .site-theme-toggle {
+    position: absolute; right: 0; top: 2px;
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1px solid var(--border2); border-radius: 30px;
+    padding: 6px 12px; cursor: pointer; font-size: 12px; font-weight: 600; color: var(--text);
+    transition: all .15s;
+  }
+  .site-theme-toggle:hover { border-color: var(--accent); }
+  .site-theme-toggle svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+  /* ── Accordion sections ── */
+  .section-head { cursor: pointer; user-select: none; justify-content: space-between; }
+  .section-head .chev { margin-left: auto; transition: transform .2s; color: var(--muted); }
+  .section-head.open .chev { transform: rotate(180deg); }
+  .ctrl-section.collapsed > *:not(.section-head) { display: none; }
+
+  /* ── Mobile drawer ── */
+  .drawer-fab {
+    display: none; position: fixed; bottom: 22px; right: 20px; z-index: 60;
+    align-items: center; gap: 8px; padding: 13px 18px; border-radius: 30px; border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff;
+    font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+  }
+  .drawer-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 65;
+    backdrop-filter: blur(2px);
+  }
+  .drawer-backdrop.show { display: block; }
+  .drawer-close {
+    display: none; width: 100%; padding: 10px; margin: 10px 16px 0; background: var(--surface2);
+    border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 13px;
+    font-weight: 600; cursor: pointer;
+  }
+
+  /* ── Meme layout extras ── */
+  .meme-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  @media (max-width: 900px) {
+    body { padding: 16px 12px 90px; }
+    .header h1 { font-size: 19px; }
+    .header-row { flex-direction: column; }
+    .site-theme-toggle { position: static; margin-top: 8px; }
+    .app { flex-direction: column; gap: 16px; }
+    .controls {
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 70;
+      width: 86%; max-width: 340px; height: 100vh; max-height: 100vh;
+      transform: translateX(-105%); transition: transform .28s ease;
+      border-radius: 0 16px 16px 0;
+    }
+    .controls.open { transform: translateX(0); }
+    .drawer-fab { display: flex; }
+    .drawer-close { display: block; }
+    .preview-wrap { position: static; width: 100%; }
+    .canvas-container { max-width: 100%; }
+    .tabs { gap: 6px; }
+    .tab { min-width: 48%; flex: 1 1 48%; }
+    .row2, .badge-colors, .theme-grid, .meme-row { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 420px) {
+    .tab { min-width: 100%; }
+    .row2, .badge-colors, .theme-grid, .meme-row { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
-<body>
+<body data-theme="dark">
 
 <div class="header">
-  <h1>News Card <span>QF Studio Pro</span></h1>
-  <p>Design once. Share everywhere. Premium 1:1 sports graphics. Owner AS Nirob & HR Apurbo</p>
+  <div class="header-row">
+    <div>
+      <h1>News Card <span>QF Studio Pro</span></h1>
+      <p>Design once. Share everywhere. Premium 1:1 sports graphics. Owner AS Nirob & HR Apurbo</p>
+    </div>
+    <button class="site-theme-toggle" id="siteThemeBtn" onclick="toggleSiteTheme()">
+      <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+      <span id="themeLabel">Dark</span>
+    </button>
+  </div>
 </div>
+
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="closeDrawer()"></div>
+<button class="drawer-fab" id="drawerFab" onclick="openDrawer()">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+  Customize
+</button>
 
 <div class="app">
 
   <!-- ═══ CONTROLS ═══ -->
-  <div class="controls">
+  <div class="controls" id="controlsPanel">
+    <button class="drawer-close" onclick="closeDrawer()">✕ Close customization</button>
 
     <!-- Layout Style -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Layout Style</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Layout Style<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div class="tabs">
         <div class="tab active" onclick="setLayout('split')" id="tab-split">⊞ Split</div>
         <div class="tab" onclick="setLayout('single')" id="tab-single">▣ Single</div>
@@ -172,6 +273,9 @@
         <div class="tab" onclick="setLayout('poster')" id="tab-poster">▥ Poster</div>
         <div class="tab" onclick="setLayout('frame')" id="tab-frame">▢ Frame</div>
         <div class="tab" onclick="setLayout('mosaic')" id="tab-mosaic">⊟ Mosaic</div>
+        <div class="tab" onclick="setLayout('meme')" id="tab-meme">😂 Meme</div>
+        <div class="tab" onclick="setLayout('magazine')" id="tab-magazine">📰 Magazine</div>
+        <div class="tab" onclick="setLayout('light')" id="tab-light">☀ Light Editorial</div>
       </div>
       <div>
         <label>Image fit (controls cropping)</label>
@@ -207,7 +311,7 @@
 
     <!-- Frame & Style -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Frame &amp; Style</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Frame &amp; Style<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div>
         <label>Outer frame</label>
         <select id="frameStyle" onchange="generate()">
@@ -223,6 +327,9 @@
           <option value="pill">Pill — rounded</option>
           <option value="ribbon">Ribbon — angled edge</option>
           <option value="square">Square — sharp tag</option>
+          <option value="outline">Outline — bordered, transparent</option>
+          <option value="glass">Glass — frosted translucent</option>
+          <option value="neon">Neon — glowing outline</option>
         </select>
       </div>
       <div>
@@ -236,7 +343,7 @@
 
     <!-- Color Theme -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Color Theme</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Color Theme<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div class="theme-grid" id="themeGrid">
         <div class="theme-swatch" data-theme="crimson" onclick="applyTheme('crimson')">
           <span class="sw-dots"><span style="background:#FF3B4E"></span><span style="background:#FF8A3D"></span></span>
@@ -293,7 +400,7 @@
       </div>
     </div>
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Photos (1–2)</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Photos (1–2)<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div class="upload-zone" id="imgZone">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         Click to add a photo (tap twice to add 2)
@@ -305,21 +412,56 @@
 
     <!-- Category Badge -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Category Badge</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Category Badge<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div>
         <label>Preset</label>
         <select id="badgePreset" onchange="applyBadgePreset()">
           <option value="BREAKING">🔴 Breaking</option>
-          <option value="MATCH REPORT">📋 Match Report</option>
-          <option value="TRANSFER NEWS">🔁 Transfer News</option>
           <option value="LIVE">🔴 Live</option>
+          <option value="MATCH REPORT">📋 Match Report</option>
+          <option value="FULL TIME">⏱️ Full Time</option>
+          <option value="HALF TIME">⏱️ Half Time</option>
+          <option value="RESULT">✅ Result</option>
+          <option value="PREVIEW">👀 Preview</option>
+          <option value="TRANSFER NEWS">🔁 Transfer News</option>
+          <option value="TRANSFER DONE">✅ Transfer Done</option>
+          <option value="RUMOR MILL">💬 Rumor Mill</option>
+          <option value="EXCLUSIVE">⭐ Exclusive</option>
+          <option value="INJURY UPDATE">🩹 Injury Update</option>
           <option value="ANALYSIS">🧠 Analysis</option>
+          <option value="OPINION">🗣️ Opinion</option>
+          <option value="INTERVIEW">🎙️ Interview</option>
+          <option value="ON THIS DAY">📅 On This Day</option>
+          <option value="RECORD BREAKER">🏆 Record Breaker</option>
+          <option value="MATCH PREVIEW">⚽ Match Preview</option>
+          <option value="LINEUPS">📝 Lineups</option>
+          <option value="PLAYER RATINGS">⭐ Player Ratings</option>
+          <option value="MEME">😂 Meme</option>
           <option value="CUSTOM">✏️ Custom...</option>
         </select>
       </div>
       <div>
+        <label>Badge type</label>
+        <div class="tabs">
+          <div class="tab active" id="badgeMode-text" onclick="setBadgeMode('text')">🔤 Text</div>
+          <div class="tab" id="badgeMode-image" onclick="setBadgeMode('image')">🖼️ Logo / Image</div>
+        </div>
+      </div>
+      <div id="badgeTextWrap">
         <label>Badge text</label>
         <input type="text" id="badgeText" value="BREAKING" oninput="generate()">
+        <div class="char-count" id="badgeTextCount">0 / 0</div>
+      </div>
+      <div id="badgeImageWrap" style="display:none;">
+        <label>Badge image (e.g. FIFA, league, or club logo)</label>
+        <div class="upload-zone" style="padding:9px;" id="badgeImgZone">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:inline-block;vertical-align:middle;margin-right:5px;"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          Upload badge logo/image
+          <input type="file" id="badgeImgInput" accept="image/*" onchange="handleBadgeImg(this)">
+        </div>
+        <img id="badgeImgThumb" class="small-thumb" style="display:none;">
+        <button class="rm-btn" id="rmBadgeImgBtn" style="display:none;" onclick="removeBadgeImg()">Remove</button>
+        <p style="font-size:11px; color:var(--muted); margin-top:4px;">Shown inside the badge chip instead of text — great for FIFA, league or club crests.</p>
       </div>
       <div class="toggle-row">
         <label style="margin:0;">Show badge</label>
@@ -329,7 +471,7 @@
 
     <!-- Scoreboard -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Scoreboard (optional)</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Scoreboard (optional)<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div class="toggle-row">
         <label style="margin:0;">Show scoreboard</label>
         <label class="switch"><input type="checkbox" id="scoreOn" onchange="generate()"><span class="slider"></span></label>
@@ -358,14 +500,15 @@
 
     <!-- Headline -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Headline</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Headline<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div>
         <label>Text</label>
         <textarea id="headline" placeholder="Your headline here...">Write Your Headline Here</textarea>
+        <div class="char-count" id="headlineCount">0 / 0</div>
       </div>
       <div>
         <label>Headline font</label>
-        <select id="fontFamily" onchange="generate()">
+        <select id="fontFamily" onchange="changeFont()">
           <option value="Anton">Anton — Bold Impact</option>
           <option value="Archivo Black">Archivo Black — Heavy</option>
           <option value="Oswald" selected>Oswald — Condensed Sport</option>
@@ -375,6 +518,11 @@
           <option value="Teko">Teko — Tall Athletic</option>
           <option value="Rajdhani">Rajdhani — Technical Sport</option>
           <option value="Russo One">Russo One — Esports Bold</option>
+          <option value="Hind Siliguri">হিন্দ শিলিগুড়ি — Bangla Clean</option>
+          <option value="Noto Sans Bengali">নোটো সান্স — Bangla Modern Bold</option>
+          <option value="Baloo Da 2">বালু দা ২ — Bangla Rounded Bold</option>
+          <option value="Tiro Bangla">টিরো বাংলা — Bangla Serif</option>
+          <option value="Anek Bangla">অনেক বাংলা — Bangla Display</option>
         </select>
       </div>
       <div>
@@ -403,8 +551,8 @@
     </div>
 
     <!-- Quote / Source -->
-    <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Quote Mode — "Who Said This"</div>
+    <div class="ctrl-section" id="quoteSection" style="display:none;">
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Quote Mode — "Who Said This"<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <p style="font-size:11px; color:var(--muted); margin:-4px 0 2px;">Used with the "Quote" layout above. Add who said the statement — or turn it off for a plain quote card.</p>
       <div class="toggle-row">
         <label style="margin:0;">Show speaker (photo + name)</label>
@@ -423,16 +571,51 @@
       <div>
         <label>Speaker name</label>
         <input type="text" id="speakerName" value="Add Name" oninput="generate()">
+        <div class="char-count" id="speakerNameCount">0 / 0</div>
       </div>
       <div>
         <label>Speaker title / role</label>
         <input type="text" id="speakerTitle" value="Add Position, Add Country/Location" oninput="generate()">
+        <div class="char-count" id="speakerTitleCount">0 / 0</div>
+      </div>
+    </div>
+
+    <!-- Meme Text (only for Meme layout) -->
+    <div class="ctrl-section" id="memeSection" style="display:none;">
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Meme Text<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <p style="font-size:11px; color:var(--muted); margin:-4px 0 2px;">Classic top/bottom meme captions over your photo. Used with the "Meme" layout above.</p>
+      <div>
+        <label>Top text</label>
+        <input type="text" id="memeTop" value="WHEN THE REF" oninput="generate()">
+        <div class="char-count" id="memeTopCount">0 / 0</div>
+      </div>
+      <div>
+        <label>Bottom text</label>
+        <input type="text" id="memeBottom" value="ADDS 9 MINUTES" oninput="generate()">
+        <div class="char-count" id="memeBottomCount">0 / 0</div>
+      </div>
+      <div class="meme-row">
+        <div>
+          <label>Caption size</label>
+          <div class="range-row">
+            <input type="range" id="memeSize" min="28" max="90" value="58" oninput="syncRange('memeSize','memeSizeVal'); generate()">
+            <span class="range-val" id="memeSizeVal">58</span>
+          </div>
+        </div>
+        <div class="toggle-row" style="align-self:end;">
+          <label style="margin:0;">Black outline</label>
+          <label class="switch"><input type="checkbox" id="memeStroke" checked onchange="generate()"><span class="slider"></span></label>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <label style="margin:0;">Show watermark/logo corner</label>
+        <label class="switch"><input type="checkbox" id="memeWatermark" checked onchange="generate()"><span class="slider"></span></label>
       </div>
     </div>
 
     <!-- Branding -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Branding &amp; Footer</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Branding &amp; Footer<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div>
         <label>Logo image</label>
         <div class="upload-zone" style="padding:9px;" id="logoZone">
@@ -446,14 +629,17 @@
       <div>
         <label>Channel / page name</label>
         <input type="text" id="channelName" value="QF | Sports" oninput="generate()">
+        <div class="char-count" id="channelNameCount">0 / 0</div>
       </div>
       <div>
         <label>Social handle</label>
         <input type="text" id="socialHandle" value="@qfsports" oninput="generate()">
+        <div class="char-count" id="socialHandleCount">0 / 0</div>
       </div>
       <div>
         <label>Website</label>
         <input type="text" id="website" value="www.qfsports.org" oninput="generate()">
+        <div class="char-count" id="websiteCount">0 / 0</div>
       </div>
       <div class="toggle-row">
         <label style="margin:0;">Auto today's date</label>
@@ -467,7 +653,7 @@
 
     <!-- Ad -->
     <div class="ctrl-section">
-      <div class="section-head"><span class="dot"></span> Sponsored / Ad Strip</div>
+      <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Sponsored / Ad Strip<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
       <div>
         <label>Ad image</label>
         <div class="upload-zone" style="padding:9px;" id="adZone">
@@ -488,6 +674,7 @@
       <div>
         <label>Fallback ad text</label>
         <input type="text" id="adText" value="Sponsored · Your Ad Here" oninput="generate()">
+        <div class="char-count" id="adTextCount">0 / 0</div>
       </div>
     </div>
 
@@ -512,7 +699,8 @@
 <script>
 const DIMS = { square: [1080,1080], portrait: [1080,1350], story: [1080,1920] };
 let cardW = 1080, cardH = 1080;
-let images = [], logoImg = null, adImg = null, speakerImg = null;
+let images = [], logoImg = null, adImg = null, speakerImg = null, badgeImg = null;
+let badgeMode = 'text';
 
 function changeAspect() {
   const v = document.getElementById('aspectRatio').value;
@@ -539,12 +727,54 @@ function syncColor(colorId, txtId) {
   document.getElementById(id).addEventListener('input', () => setTimeout(generate, 80));
 });
 
+function changeFont() {
+  const f = document.getElementById('fontFamily').value;
+  if (document.fonts && document.fonts.load) {
+    Promise.all([
+      document.fonts.load(`800 60px "${f}"`),
+      document.fonts.load(`400 60px "${f}"`)
+    ]).then(generate).catch(generate);
+  } else {
+    generate();
+  }
+}
+
 function setLayout(l) {
   layout = l;
-  ['split','single','diagonal','overlay','quote','poster','frame','mosaic'].forEach(x => {
+  ['split','single','diagonal','overlay','quote','poster','frame','mosaic','meme','magazine','light'].forEach(x => {
     document.getElementById('tab-'+x).classList.toggle('active', x === l);
   });
+  // Field that's only relevant in Quote mode (speaker / coach name + location)
+  // shows for 'quote', hides everywhere else — and Meme captions only show for 'meme'.
+  document.getElementById('quoteSection').style.display = (l === 'quote') ? 'flex' : 'none';
+  document.getElementById('memeSection').style.display = (l === 'meme') ? 'flex' : 'none';
   generate();
+}
+
+function toggleSection(headEl) {
+  const section = headEl.closest('.ctrl-section');
+  const willCollapse = !section.classList.contains('collapsed');
+  section.classList.toggle('collapsed', willCollapse);
+  headEl.classList.toggle('open', !willCollapse);
+}
+
+function openDrawer() {
+  document.getElementById('controlsPanel').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('show');
+}
+function closeDrawer() {
+  document.getElementById('controlsPanel').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('show');
+}
+
+function toggleSiteTheme() {
+  const body = document.body;
+  const isLight = body.getAttribute('data-theme') === 'light';
+  body.setAttribute('data-theme', isLight ? 'dark' : 'light');
+  document.getElementById('themeLabel').textContent = isLight ? 'Dark' : 'Light';
+  document.getElementById('themeIcon').innerHTML = isLight
+    ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>'
+    : '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
 }
 
 let sportType = 'football';
@@ -598,7 +828,11 @@ let currentAccent2 = '#FF8A3D';
 
 function applyBadgePreset() {
   const v = document.getElementById('badgePreset').value;
-  if (v !== 'CUSTOM') document.getElementById('badgeText').value = v;
+  if (v !== 'CUSTOM') {
+    const bt = document.getElementById('badgeText');
+    bt.value = v;
+    bt.dispatchEvent(new Event('input'));
+  }
   generate();
 }
 
@@ -670,6 +904,30 @@ function removeLogo() {
   document.getElementById('logoThumb').style.display = 'none';
   document.getElementById('rmLogoBtn').style.display = 'none';
   document.getElementById('logoInput').value = '';
+  generate();
+}
+
+async function handleBadgeImg(input) {
+  if (!input.files[0]) return;
+  badgeImg = await loadImg(input.files[0]);
+  document.getElementById('badgeImgThumb').src = badgeImg.src;
+  document.getElementById('badgeImgThumb').style.display = 'block';
+  document.getElementById('rmBadgeImgBtn').style.display = 'inline-block';
+  generate();
+}
+function removeBadgeImg() {
+  badgeImg = null;
+  document.getElementById('badgeImgThumb').style.display = 'none';
+  document.getElementById('rmBadgeImgBtn').style.display = 'none';
+  document.getElementById('badgeImgInput').value = '';
+  generate();
+}
+function setBadgeMode(m) {
+  badgeMode = m;
+  document.getElementById('badgeMode-text').classList.toggle('active', m === 'text');
+  document.getElementById('badgeMode-image').classList.toggle('active', m === 'image');
+  document.getElementById('badgeTextWrap').style.display = (m === 'text') ? 'block' : 'none';
+  document.getElementById('badgeImageWrap').style.display = (m === 'image') ? 'block' : 'none';
   generate();
 }
 
@@ -759,6 +1017,93 @@ function hexToRgba(hex, alpha) {
   hex = hex.replace('#','');
   const r = parseInt(hex.substring(0,2),16), g = parseInt(hex.substring(2,4),16), b = parseInt(hex.substring(4,6),16);
   return `rgba(${r},${g},${b},${alpha})`;
+}
+
+// ── Reusable category badge renderer — supports several visual styles ──
+function drawCategoryBadge(ctx, bx, by, txt, shape, c1, c2, opts) {
+  opts = opts || {};
+  const bH = opts.height || 44;
+
+  // Image badge mode — draws an uploaded logo (e.g. FIFA / league / club crest) in a clean chip
+  if (opts.image) {
+    const size = bH + 14;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    ctx.fillStyle = opts.chipBg || 'rgba(255,255,255,0.95)';
+    if (shape === 'square') { roundRect(ctx, bx, by, size, size, 8); ctx.fill(); }
+    else { ctx.beginPath(); ctx.arc(bx + size/2, by + size/2, size/2, 0, Math.PI*2); ctx.fill(); }
+    ctx.restore();
+    if (shape === 'outline' || shape === 'neon') {
+      ctx.strokeStyle = c1; ctx.lineWidth = 2.5;
+      if (shape === 'square') { roundRect(ctx, bx, by, size, size, 8); ctx.stroke(); }
+      else { ctx.beginPath(); ctx.arc(bx + size/2, by + size/2, size/2, 0, Math.PI*2); ctx.stroke(); }
+    }
+    ctx.save();
+    const pad = size * 0.16;
+    if (shape === 'square') { roundRect(ctx, bx+pad/2, by+pad/2, size-pad, size-pad, 6); ctx.clip(); }
+    else { ctx.beginPath(); ctx.arc(bx + size/2, by + size/2, (size-pad)/2, 0, Math.PI*2); ctx.clip(); }
+    const ratio = opts.image.width / opts.image.height;
+    const inner = size - pad;
+    let iw, ih;
+    if (ratio > 1) { iw = inner; ih = inner/ratio; } else { ih = inner; iw = inner*ratio; }
+    ctx.drawImage(opts.image, bx + size/2 - iw/2, by + size/2 - ih/2, iw, ih);
+    ctx.restore();
+    return { width: size, height: size };
+  }
+
+  const fontSize = opts.fontSize || 22;
+  const dot = opts.dot !== false;
+  ctx.font = `800 ${fontSize}px Oswald, Arial`;
+  const tw = ctx.measureText(txt).width;
+  const padX = 20, dotSpace = dot ? 22 : 0;
+  const bW = tw + padX*2 + dotSpace;
+
+  ctx.save();
+  if (shape === 'outline') {
+    ctx.strokeStyle = c1; ctx.lineWidth = 2.5;
+    roundRect(ctx, bx, by, bW, bH, bH/2); ctx.stroke();
+  } else if (shape === 'glass') {
+    ctx.fillStyle = 'rgba(255,255,255,0.16)';
+    roundRect(ctx, bx, by, bW, bH, bH/2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
+    roundRect(ctx, bx, by, bW, bH, bH/2); ctx.stroke();
+  } else if (shape === 'neon') {
+    ctx.shadowColor = c1; ctx.shadowBlur = 24;
+    ctx.fillStyle = '#0b0b10';
+    roundRect(ctx, bx, by, bW, bH, bH/2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = c1; ctx.lineWidth = 2;
+    roundRect(ctx, bx, by, bW, bH, bH/2); ctx.stroke();
+  } else {
+    ctx.shadowColor = 'rgba(0,0,0,0.45)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+    const bGrad = ctx.createLinearGradient(bx, by, bx+bW, by);
+    bGrad.addColorStop(0, c1); bGrad.addColorStop(1, c2);
+    ctx.fillStyle = bGrad;
+    if (shape === 'ribbon') {
+      const cut = 12;
+      ctx.beginPath();
+      ctx.moveTo(bx, by); ctx.lineTo(bx+bW-cut, by); ctx.lineTo(bx+bW, by+bH/2);
+      ctx.lineTo(bx+bW-cut, by+bH); ctx.lineTo(bx, by+bH);
+      ctx.closePath(); ctx.fill();
+    } else if (shape === 'square') {
+      roundRect(ctx, bx, by, bW, bH, 4); ctx.fill();
+    } else {
+      roundRect(ctx, bx, by, bW, bH, bH/2); ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  let textX = bx + padX;
+  const coloredText = (shape === 'outline' || shape === 'neon');
+  if (dot) {
+    ctx.fillStyle = coloredText ? c1 : (opts.dotColor || '#fff');
+    ctx.beginPath(); ctx.arc(bx+24, by+bH/2, 5, 0, Math.PI*2); ctx.fill();
+    textX = bx + 40;
+  }
+  ctx.fillStyle = coloredText ? c1 : (opts.textColor || '#fff');
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(txt, textX, by+bH/2+1);
+  return { width: bW, height: bH };
 }
 
 // ── QUOTE CARD renderer (statement / who-said-this layout) ──────────
@@ -884,7 +1229,7 @@ function drawQuoteCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, qu
 
 // ── FRAME CARD renderer (modern floating photo-card template) ───────
 function drawFrameCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, headline,
-  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, hlColor, badgeOn, badgeText) {
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, hlColor, badgeOn, badgeText, badgeShape) {
 
   // Rich gradient background using theme colors
   const bg = ctx.createLinearGradient(0, 0, W, H);
@@ -939,16 +1284,9 @@ function drawFrameCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, he
   roundRect(ctx, cardX, cardY, cardW, cardH, 28); ctx.stroke();
 
   // category badge on the photo card
-  if (badgeOn && badgeText.trim()) {
-    const txt = badgeText.toUpperCase();
-    ctx.font = '800 20px Oswald, Arial';
-    const tw = ctx.measureText(txt).width;
-    const bH = 40, bW = tw + 38;
-    const bx = cardX + 20, by = cardY + 20;
-    ctx.fillStyle = accentColor;
-    roundRect(ctx, bx, by, bW, bH, bH/2); ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(txt, bx + 18, by + bH/2 + 1);
+  if (badgeOn && (badgeMode === 'image' ? badgeImg : badgeText.trim())) {
+    drawCategoryBadge(ctx, cardX + 20, cardY + 20, badgeText.toUpperCase(), badgeShape, accentColor, accent2,
+      { height: 40, fontSize: 20, image: (badgeMode === 'image' && badgeImg) ? badgeImg : null });
   }
 
   // small circular logo badge on the photo card (top-right)
@@ -971,7 +1309,7 @@ function drawFrameCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, he
   const textTop = cardY + cardH + 46;
   ctx.font = '700 16px Oswald, Arial';
   ctx.fillStyle = accent2; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-  ctx.fillText('● SPORTS NEWS', cardX, textTop);
+  ctx.fillText('● ' + ((badgeText && badgeText.trim()) ? badgeText.toUpperCase() : 'SPORTS NEWS'), cardX, textTop);
 
   ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
   ctx.fillStyle = '#ffffff';
@@ -1000,6 +1338,266 @@ function drawFrameCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, he
   ctx.fillStyle = 'rgba(255,255,255,0.12)';
   roundRect(ctx, pillX, pillY, pillW, pillH, 16); ctx.fill();
   ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(dateStr, pillX + pillW/2, pillY + pillH/2 + 1);
+}
+
+function drawMemeCard(ctx, W, H, accentColor, logoImg, imgFit, topText, bottomText, capSize, useStroke, showWatermark, channelName) {
+  // Full-bleed photo background
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  const mainImg = images.filter(Boolean)[0];
+  if (mainImg) {
+    drawCropped(ctx, mainImg, 0, 0, W, H, imgFit);
+  } else {
+    ctx.fillStyle = '#1b1b20';
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#3a3a42';
+    ctx.font = '500 18px Inter, Arial';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Upload a photo above for your meme', W/2, H/2);
+  }
+
+  // classic Impact-style caption renderer (uppercase, white fill, black stroke)
+  function drawCaption(text, yCenter, vAlign) {
+    if (!text || !text.trim()) return;
+    const t = text.toUpperCase();
+    let size = capSize;
+    ctx.font = `800 ${size}px Anton, Arial`;
+    let lines = wrapTextLines(t, W - 60, ctx);
+    // shrink if too many lines so it doesn't overflow the card
+    while (lines.length > 3 && size > 22) {
+      size -= 4;
+      ctx.font = `800 ${size}px Anton, Arial`;
+      lines = wrapTextLines(t, W - 60, ctx);
+    }
+    const lineH = size * 1.08;
+    const blockH = lines.length * lineH;
+    let y = vAlign === 'top' ? yCenter : yCenter - blockH;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    lines.forEach(l => {
+      const x = W/2;
+      if (useStroke) {
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = Math.max(4, size * 0.09);
+        ctx.strokeText(l, x, y);
+      }
+      ctx.fillStyle = '#fff';
+      ctx.fillText(l, x, y);
+      y += lineH;
+    });
+  }
+
+  drawCaption(topText, 28, 'top');
+  drawCaption(bottomText, H - 28, 'bottom');
+
+  // small accent corner ribbon + watermark, keeps it recognizable as yours
+  if (showWatermark) {
+    if (logoImg) {
+      const lr = 26;
+      const lx = W - lr - 22, ly = lr + 22;
+      ctx.save();
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI*2); ctx.clip();
+      const ratio = logoImg.width / logoImg.height;
+      const inner = lr * 1.5;
+      let lw, lh;
+      if (ratio > 1) { lw = inner; lh = inner/ratio; } else { lh = inner; lw = inner*ratio; }
+      ctx.drawImage(logoImg, lx-lw/2, ly-lh/2, lw, lh);
+      ctx.restore();
+    }
+    ctx.font = '700 16px Inter, Arial';
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 6;
+    ctx.fillText(channelName, 20, H - 20);
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ── MAGAZINE — bold cover-style: full photo top, clean white panel below ──
+function drawMagazineCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, headline,
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, badgeOn, badgeText, badgeShape) {
+
+  const BRAND_H = 90;
+  const PHOTO_H = H * 0.62;
+  const PANEL_Y = PHOTO_H;
+  const PANEL_H = H - PHOTO_H - BRAND_H;
+
+  // Photo
+  ctx.save();
+  const filterMap = {
+    none: 'none', grayscale: 'grayscale(1) contrast(1.05)',
+    duotone: 'grayscale(1) contrast(1.15) brightness(0.95)',
+    vintage: 'sepia(0.55) contrast(1.05) saturate(1.1) brightness(0.95)',
+    contrast: 'contrast(1.3) saturate(1.25)', cool: 'saturate(1.1) hue-rotate(-12deg) brightness(0.95) contrast(1.1)'
+  };
+  ctx.filter = filterMap[photoFilter] || 'none';
+  const mainImg = images.filter(Boolean)[0];
+  if (mainImg) drawCropped(ctx, mainImg, 0, 0, W, PHOTO_H, imgFit);
+  else { ctx.fillStyle = '#e9e9ec'; ctx.fillRect(0, 0, W, PHOTO_H); }
+  ctx.filter = 'none';
+  ctx.restore();
+
+  // subtle top vignette for badge legibility
+  const vg = ctx.createLinearGradient(0,0,0,140);
+  vg.addColorStop(0, 'rgba(0,0,0,0.35)'); vg.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = vg; ctx.fillRect(0, 0, W, 140);
+
+  if (badgeOn && (badgeMode === 'image' ? badgeImg : badgeText.trim())) {
+    drawCategoryBadge(ctx, 28, 28, badgeText.toUpperCase(), badgeShape, accentColor, accent2,
+      { image: (badgeMode === 'image' && badgeImg) ? badgeImg : null });
+  }
+  if (logoImg) {
+    const lr = 28, lx = W - lr - 28, ly = 28 + lr;
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI*2); ctx.clip();
+    const ratio = logoImg.width / logoImg.height;
+    const inner = lr*1.5; let lw, lh;
+    if (ratio > 1) { lw = inner; lh = inner/ratio; } else { lh = inner; lw = inner*ratio; }
+    ctx.drawImage(logoImg, lx-lw/2, ly-lh/2, lw, lh);
+    ctx.restore();
+  }
+
+  // White panel sliding up over the photo, rounded top corners
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.25)'; ctx.shadowBlur = 30; ctx.shadowOffsetY = -8;
+  roundRect(ctx, 0, PANEL_Y - 26, W, PANEL_H + BRAND_H + 26, {tl:30, tr:30, br:0, bl:0});
+  ctx.fillStyle = '#ffffff'; ctx.fill();
+  ctx.restore();
+
+  // small grabber/accent rule
+  ctx.fillStyle = accentColor;
+  ctx.fillRect(36, PANEL_Y - 26 + 22, 50, 5);
+
+  // headline in dark editorial type
+  ctx.fillStyle = '#15151a';
+  ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  const lineH = fontSize * 1.14;
+  const lines = wrapTextLines(headline, W - 72, ctx).slice(0, 3);
+  let ty = PANEL_Y - 26 + 42;
+  lines.forEach(l => { ctx.fillText(l, 36, ty); ty += lineH; });
+
+  // footer: channel + date, separated by hairline
+  const footY = H - BRAND_H;
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(36, footY); ctx.lineTo(W - 36, footY); ctx.stroke();
+
+  ctx.font = '800 21px Montserrat, Arial';
+  ctx.fillStyle = '#15151a'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(channelName, 36, footY + 32);
+  ctx.font = '500 14px Inter, Arial';
+  ctx.fillStyle = '#6b6b76';
+  ctx.fillText(socialHandle + '   ·   ' + websiteStr, 36, footY + 56);
+
+  ctx.font = '700 14px Inter, Arial';
+  const dw = ctx.measureText(dateStr).width;
+  const pillW = dw + 26, pillH = 30;
+  const pillX = W - 36 - pillW, pillY = footY + (BRAND_H - pillH)/2;
+  ctx.fillStyle = hexToRgba(accentColor, 0.12);
+  roundRect(ctx, pillX, pillY, pillW, pillH, 15); ctx.fill();
+  ctx.fillStyle = accentColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(dateStr, pillX + pillW/2, pillY + pillH/2 + 1);
+}
+
+// ── LIGHT EDITORIAL — clean, bright, soft-shadow card on a cream backdrop ──
+function drawLightCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, headline,
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, badgeOn, badgeText, badgeShape) {
+
+  // soft cream/paper background with a faint accent glow
+  const bg = ctx.createLinearGradient(0,0,0,H);
+  bg.addColorStop(0, '#FFFFFF'); bg.addColorStop(1, '#F3F1EC');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  ctx.save();
+  ctx.globalAlpha = 0.08; ctx.fillStyle = accentColor;
+  ctx.beginPath(); ctx.arc(W*0.9, H*0.05, W*0.25, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  const margin = W * 0.065;
+  const cardX = margin, cardY = H * 0.07;
+  const cardW = W - margin*2;
+  const cardH = H * 0.52;
+
+  // floating photo card
+  ctx.save();
+  ctx.shadowColor = 'rgba(20,20,30,0.18)'; ctx.shadowBlur = 38; ctx.shadowOffsetY = 16;
+  roundRect(ctx, cardX, cardY, cardW, cardH, 26);
+  ctx.fillStyle = '#000'; ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  roundRect(ctx, cardX, cardY, cardW, cardH, 26);
+  ctx.clip();
+  const filterMap = {
+    none: 'none', grayscale: 'grayscale(1) contrast(1.05)',
+    duotone: 'grayscale(1) contrast(1.15) brightness(0.95)',
+    vintage: 'sepia(0.55) contrast(1.05) saturate(1.1) brightness(0.95)',
+    contrast: 'contrast(1.3) saturate(1.25)', cool: 'saturate(1.1) hue-rotate(-12deg) brightness(0.95) contrast(1.1)'
+  };
+  ctx.filter = filterMap[photoFilter] || 'none';
+  const mainImg = images.filter(Boolean)[0];
+  if (mainImg) drawCropped(ctx, mainImg, cardX, cardY, cardW, cardH, imgFit);
+  else { ctx.fillStyle = '#e9e9ec'; ctx.fillRect(cardX, cardY, cardW, cardH); }
+  ctx.filter = 'none';
+  ctx.restore();
+
+  if (badgeOn && (badgeMode === 'image' ? badgeImg : badgeText.trim())) {
+    drawCategoryBadge(ctx, cardX + 18, cardY + 18, badgeText.toUpperCase(), badgeShape, accentColor, accent2,
+      { image: (badgeMode === 'image' && badgeImg) ? badgeImg : null });
+  }
+  if (logoImg) {
+    const lr = 27, lx = cardX + cardW - lr - 18, ly = cardY + 18 + lr;
+    ctx.save();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, lr, 0, Math.PI*2); ctx.clip();
+    const ratio = logoImg.width / logoImg.height;
+    const inner = lr*1.5; let lw, lh;
+    if (ratio > 1) { lw = inner; lh = inner/ratio; } else { lh = inner; lw = inner*ratio; }
+    ctx.drawImage(logoImg, lx-lw/2, ly-lh/2, lw, lh);
+    ctx.restore();
+  }
+
+  // headline, dark ink text on paper background
+  const textTop = cardY + cardH + 50;
+  ctx.font = '700 15px Oswald, Arial';
+  ctx.fillStyle = accentColor; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  ctx.fillText('● ' + ((badgeText && badgeText.trim()) ? badgeText.toUpperCase() : 'SPORTS NEWS'), cardX, textTop);
+
+  ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
+  ctx.fillStyle = '#16161c';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  const lineH = fontSize * 1.15;
+  const lines = wrapTextLines(headline, cardW, ctx).slice(0, 3);
+  let ty = textTop + 16;
+  lines.forEach(l => { ctx.fillText(l, cardX, ty); ty += lineH; });
+
+  // footer
+  const footY = H - 72;
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(cardX, footY); ctx.lineTo(W - cardX, footY); ctx.stroke();
+
+  ctx.font = '800 22px Montserrat, Arial';
+  ctx.fillStyle = '#16161c'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.fillText(channelName, cardX, footY + 32);
+  ctx.font = '500 15px Inter, Arial';
+  ctx.fillStyle = '#7a7a86';
+  ctx.fillText(socialHandle + '   ·   ' + websiteStr, cardX, footY + 56);
+
+  ctx.font = '700 15px Inter, Arial';
+  const dw = ctx.measureText(dateStr).width;
+  const pillW = dw + 28, pillH = 32;
+  const pillX = W - cardX - pillW, pillY = footY + 22;
+  ctx.fillStyle = hexToRgba(accentColor, 0.12);
+  roundRect(ctx, pillX, pillY, pillW, pillH, 16); ctx.fill();
+  ctx.strokeStyle = hexToRgba(accentColor, 0.4); ctx.lineWidth = 1;
+  roundRect(ctx, pillX, pillY, pillW, pillH, 16); ctx.stroke();
+  ctx.fillStyle = accentColor; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.fillText(dateStr, pillX + pillW/2, pillY + pillH/2 + 1);
 }
 
@@ -1049,7 +1647,7 @@ function generate() {
   const PHOTO_H = H - BRAND_H - AD_H - AD_GAP - HL_H;
 
   // ── Base background ──
-  if (layout === 'quote') {
+  if (layout === 'quote' || layout === 'light') {
     ctx.fillStyle = '#FBF1E3';
     ctx.fillRect(0, 0, W, H);
   } else {
@@ -1071,7 +1669,23 @@ function generate() {
       speakerOnVal, speakerNameVal, speakerTitleVal);
   } else if (layout === 'frame') {
     drawFrameCard(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
-      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, hlColor, badgeOn, badgeText);
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, hlColor, badgeOn, badgeText, badgeShape);
+  } else if (layout === 'meme') {
+    drawMemeCard(ctx, W, H, accentColor, logoImg, imgFit,
+      document.getElementById('memeTop').value,
+      document.getElementById('memeBottom').value,
+      parseInt(document.getElementById('memeSize').value),
+      document.getElementById('memeStroke').checked,
+      document.getElementById('memeWatermark').checked,
+      channelName);
+  } else if (layout === 'magazine') {
+    drawMagazineCard(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
+      badgeOn, badgeText, badgeShape);
+  } else if (layout === 'light') {
+    drawLightCard(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
+      badgeOn, badgeText, badgeShape);
   } else {
 
   // ════════════════════════════════════════
@@ -1208,39 +1822,9 @@ function generate() {
   // ════════════════════════════════════════
   // CATEGORY BADGE — top-left over the photo
   // ════════════════════════════════════════
-  if (badgeOn && badgeText.trim()) {
-    ctx.font = '800 22px Oswald, Arial';
-    const txt = badgeText.toUpperCase();
-    const tw = ctx.measureText(txt).width;
-    const padX = 20, bH = 44;
-    const bW = tw + padX*2 + 22;
-    const bx = 28, by = 28;
-    ctx.save();
-    ctx.shadowColor = 'rgba(0,0,0,0.45)';
-    ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
-    const bGrad = ctx.createLinearGradient(bx, by, bx+bW, by);
-    bGrad.addColorStop(0, accentColor); bGrad.addColorStop(1, currentAccent2);
-    ctx.fillStyle = bGrad;
-    if (badgeShape === 'ribbon') {
-      const cut = 12;
-      ctx.beginPath();
-      ctx.moveTo(bx, by); ctx.lineTo(bx+bW-cut, by); ctx.lineTo(bx+bW, by+bH/2);
-      ctx.lineTo(bx+bW-cut, by+bH); ctx.lineTo(bx, by+bH);
-      ctx.closePath(); ctx.fill();
-    } else if (badgeShape === 'square') {
-      roundRect(ctx, bx, by, bW, bH, 4);
-      ctx.fill();
-    } else {
-      roundRect(ctx, bx, by, bW, bH, bH/2);
-      ctx.fill();
-    }
-    ctx.restore();
-    // pulsing dot
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(bx+24, by+bH/2, 5, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-    ctx.fillText(txt, bx+40, by+bH/2+1);
+  if (badgeOn && (badgeMode === 'image' ? badgeImg : badgeText.trim())) {
+    drawCategoryBadge(ctx, 28, 28, badgeText.toUpperCase(), badgeShape, accentColor, currentAccent2,
+      { image: (badgeMode === 'image' && badgeImg) ? badgeImg : null });
   }
 
   // ════════════════════════════════════════
@@ -1348,6 +1932,7 @@ function generate() {
   // HEADLINE SECTION — bold, left-aligned, layered panel
   // ════════════════════════════════════════
   const HL_Y = PHOTO_H;
+  const kickerText = (badgeText && badgeText.trim()) ? badgeText.toUpperCase() : 'SPORTS NEWS';
 
   if (layout === 'overlay') {
     const hl_overlay_y = H - AD_H - AD_GAP - BRAND_H - HL_H;
@@ -1356,7 +1941,7 @@ function generate() {
 
     ctx.font = '700 15px Oswald, Arial';
     ctx.fillStyle = accentColor; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('SPORTS NEWS', 36, hl_overlay_y + 36);
+    ctx.fillText(kickerText, 36, hl_overlay_y + 36);
 
     ctx.fillStyle = hlColor;
     ctx.font = `800 ${fontSize}px ${fontFamily}, sans-serif`;
@@ -1381,7 +1966,7 @@ function generate() {
     ctx.fillRect(36, py - 26, 64, 6);
     ctx.font = '700 15px Oswald, Arial';
     ctx.fillStyle = accentColor; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    ctx.fillText('SPORTS NEWS', 112, py - 21);
+    ctx.fillText(kickerText, 112, py - 21);
 
     ctx.fillStyle = hlColor;
     ctx.font = `800 ${posterSize}px ${fontFamily}, sans-serif`;
@@ -1415,10 +2000,10 @@ function generate() {
     ctx.fillStyle = accentColor; ctx.textBaseline = 'alphabetic';
     if (hlAlign === 'center') {
       ctx.textAlign = 'center';
-      ctx.fillText('● SPORTS NEWS', W/2, HL_Y + 34);
+      ctx.fillText('● ' + kickerText, W/2, HL_Y + 34);
     } else {
       ctx.textAlign = 'left';
-      ctx.fillText('● SPORTS NEWS', 38, HL_Y + 34);
+      ctx.fillText('● ' + kickerText, 38, HL_Y + 34);
     }
 
     // headline
@@ -1593,8 +2178,40 @@ function download() {
   a.click();
 }
 
-// Initial render
-generate();
+// ── Character counters — shows live length + a recommended max for clean fit ──
+const CHAR_LIMITS = {
+  headline: 80,
+  badgeText: 18,
+  speakerName: 30,
+  speakerTitle: 50,
+  memeTop: 40,
+  memeBottom: 40,
+  channelName: 24,
+  socialHandle: 24,
+  website: 30,
+  adText: 40
+};
+function bindCharCounter(fieldId, max) {
+  const el = document.getElementById(fieldId);
+  const out = document.getElementById(fieldId + 'Count');
+  if (!el || !out) return;
+  function update() {
+    const len = el.value.length;
+    out.textContent = `${len} / ${max} chars`;
+    out.classList.toggle('over', len > max);
+    out.title = len > max ? `Over the suggested ${max}-character limit — text may wrap or shrink to fit.` : `Recommended max ${max} characters for a clean fit.`;
+  }
+  el.addEventListener('input', update);
+  update();
+}
+Object.keys(CHAR_LIMITS).forEach(id => bindCharCounter(id, CHAR_LIMITS[id]));
+
+// Initial render — wait for webfonts (incl. Bangla) to load so glyphs aren't blank on first paint
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(generate);
+} else {
+  generate();
+}
 </script>
 </body>
 </html>
