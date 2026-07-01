@@ -115,6 +115,13 @@
   .range-row input[type="range"] { flex: 1; -webkit-appearance: none; height: 3px; background: var(--border2); border-radius: 2px; outline: none; }
   .range-row input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); cursor: pointer; }
   .range-val { font-size: 12px; color: var(--muted); min-width: 28px; text-align: right; }
+  .font-size-num {
+    width: 52px; flex-shrink: 0; padding: 5px 6px; font-size: 12px; text-align: center;
+    border-radius: 6px; border: 1px solid var(--border2); background: var(--surface2); color: var(--text); outline: none;
+  }
+  .font-size-num:focus { border-color: var(--accent); }
+  /* Hide native spinner arrows so the box stays compact next to the slider */
+  .font-size-num::-webkit-inner-spin-button, .font-size-num::-webkit-outer-spin-button { opacity: 1; }
 
   .small-thumb { max-height: 36px; border-radius: 4px; border: 1px solid var(--border); margin-top: 5px; display: block; }
 
@@ -526,10 +533,13 @@
         </select>
       </div>
       <div>
-        <label>Font size</label>
+        <div class="field-foot" style="margin-top:0;">
+          <label style="margin-bottom:0;">Font size</label>
+          <span class="hint">auto-shrinks to fit long headlines</span>
+        </div>
         <div class="range-row">
-          <input type="range" id="fontSize" min="28" max="72" value="50" oninput="syncRange('fontSize','fontSizeVal'); generate()">
-          <span class="range-val" id="fontSizeVal">50</span>
+          <input type="range" id="fontSize" min="16" max="140" value="50" oninput="syncFontSize('range')">
+          <input type="number" id="fontSizeNum" class="font-size-num" min="16" max="140" value="50" oninput="syncFontSize('num')">
         </div>
       </div>
       <div class="row2">
@@ -715,6 +725,25 @@ let layout = 'split';
 
 // ── Helpers ───────────────────────────────────────────────────────
 function syncRange(id, valId) { document.getElementById(valId).textContent = document.getElementById(id).value; }
+
+// Keeps the headline font-size range slider and the custom number input in lockstep,
+// whichever one the user just touched, then re-renders the card.
+function syncFontSize(source) {
+  const range = document.getElementById('fontSize');
+  const num = document.getElementById('fontSizeNum');
+  const min = parseInt(range.min), max = parseInt(range.max);
+
+  if (source === 'range') {
+    num.value = range.value;
+  } else {
+    let v = parseInt(num.value);
+    if (isNaN(v)) return; // let them keep typing (e.g. clearing the field) without forcing a jump
+    v = Math.max(min, Math.min(max, v));
+    num.value = v;
+    range.value = v;
+  }
+  generate();
+}
 
 function syncColor(colorId, txtId) {
   const c = document.getElementById(colorId), t = document.getElementById(txtId);
@@ -1226,7 +1255,7 @@ function drawQuoteCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, qu
   const footY = H - 72;
   const speakerBlockH = speakerOn ? 110 : 20;
   const availQuoteH = (footY - 40) - quoteTop - speakerBlockH;
-  const fitQ = fitTextBlock(ctx, quoteText, W * 0.82, availQuoteH, fontFamily, Math.min(fontSize, 40), { weight: '700', minSize: 24, lineHeightMult: 1.34 });
+  const fitQ = fitTextBlock(ctx, quoteText, W * 0.82, availQuoteH, fontFamily, fontSize, { weight: '700', minSize: 24, lineHeightMult: 1.34 });
   ctx.fillStyle = '#1c1c1c';
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   let qy = quoteTop;
