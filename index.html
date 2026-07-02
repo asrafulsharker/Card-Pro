@@ -277,6 +277,10 @@
         <div class="tab" onclick="setLayout('diagonal')" id="tab-diagonal">◪ Diagonal</div>
         <div class="tab" onclick="setLayout('overlay')" id="tab-overlay">◫ Overlay</div>
         <div class="tab" onclick="setLayout('quote')" id="tab-quote">❝ Quote</div>
+        <div class="tab" onclick="setLayout('quoteMinimal')" id="tab-quoteMinimal">✒ Quote Editorial</div>
+        <div class="tab" onclick="setLayout('quoteBold')" id="tab-quoteBold">🔥 Quote Bold</div>
+        <div class="tab" onclick="setLayout('quoteSplit')" id="tab-quoteSplit">◨ Quote Split</div>
+        <div class="tab" onclick="setLayout('quoteTestimonial')" id="tab-quoteTestimonial">💬 Quote Card</div>
         <div class="tab" onclick="setLayout('poster')" id="tab-poster">▥ Poster</div>
         <div class="tab" onclick="setLayout('frame')" id="tab-frame">▢ Frame</div>
         <div class="tab" onclick="setLayout('mosaic')" id="tab-mosaic">⊟ Mosaic</div>
@@ -563,7 +567,7 @@
     <!-- Quote / Source -->
     <div class="ctrl-section" id="quoteSection" style="display:none;">
       <div class="section-head open" onclick="toggleSection(this)"><span class="dot"></span> Quote Mode — "Who Said This"<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
-      <p style="font-size:11px; color:var(--muted); margin:-4px 0 2px;">Used with the "Quote" layout above. Add who said the statement — or turn it off for a plain quote card.</p>
+      <p style="font-size:11px; color:var(--muted); margin:-4px 0 2px;">Used with any "Quote" layout above (Quote, Editorial, Bold, Split, Card). Add who said the statement — or turn it off for a plain quote card.</p>
       <div class="toggle-row">
         <label style="margin:0;">Show speaker (photo + name)</label>
         <label class="switch"><input type="checkbox" id="speakerOn" checked onchange="generate()"><span class="slider"></span></label>
@@ -770,12 +774,13 @@ function changeFont() {
 
 function setLayout(l) {
   layout = l;
-  ['split','single','diagonal','overlay','quote','poster','frame','mosaic','meme','magazine','light'].forEach(x => {
+  ['split','single','diagonal','overlay','quote','quoteMinimal','quoteBold','quoteSplit','quoteTestimonial','poster','frame','mosaic','meme','magazine','light'].forEach(x => {
     document.getElementById('tab-'+x).classList.toggle('active', x === l);
   });
-  // Field that's only relevant in Quote mode (speaker / coach name + location)
-  // shows for 'quote', hides everywhere else — and Meme captions only show for 'meme'.
-  document.getElementById('quoteSection').style.display = (l === 'quote') ? 'flex' : 'none';
+  // Field that's only relevant in Quote modes (speaker / coach name + location)
+  // shows for any quote-style layout, hides everywhere else — and Meme captions only show for 'meme'.
+  const isQuoteLayout = (l === 'quote' || l === 'quoteMinimal' || l === 'quoteBold' || l === 'quoteSplit' || l === 'quoteTestimonial');
+  document.getElementById('quoteSection').style.display = isQuoteLayout ? 'flex' : 'none';
   document.getElementById('memeSection').style.display = (l === 'meme') ? 'flex' : 'none';
   generate();
 }
@@ -1292,6 +1297,281 @@ function drawQuoteCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, qu
   ctx.fillText(footText, cx, fY);
 }
 
+// ── QUOTE EDITORIAL renderer (minimal, serif, generous whitespace) ──
+function drawQuoteMinimal(ctx, W, H, accentColor, accent2, fontFamily, fontSize, quoteText,
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, speakerOn, speakerName, speakerTitle) {
+
+  ctx.fillStyle = '#FBF1E3';
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const pad = W * 0.1;
+
+  // Top bar: channel + date
+  ctx.font = `800 ${Math.round(W*0.028)}px ${fontFamily}, sans-serif`;
+  ctx.fillStyle = accentColor; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(channelName, pad, H*0.055);
+  ctx.font = '600 15px Inter, Arial'; ctx.fillStyle = 'rgba(0,0,0,0.45)';
+  ctx.textAlign = 'right';
+  ctx.fillText(dateStr, W - pad, H*0.06);
+
+  // Oversized decorative quotation mark, faded into the paper
+  ctx.font = `800 ${Math.round(W*0.2)}px Georgia, serif`;
+  ctx.fillStyle = hexToRgba(accentColor, 0.14);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('\u201C', pad - W*0.015, H*0.1);
+
+  const footY = H - H*0.1;
+  const nameBlockH = speakerOn ? 130 : 0;
+  const quoteTop = H * 0.26;
+  const availH = (footY - nameBlockH) - quoteTop;
+
+  const fitQ = fitTextBlock(ctx, quoteText, W - pad*2, availH, 'Georgia', fontSize, { weight: '700', minSize: 22, lineHeightMult: 1.4 });
+  ctx.fillStyle = '#1c1c1c'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  let qy = quoteTop + Math.max(0, (availH - fitQ.blockH) / 2);
+  fitQ.lines.forEach(l => { ctx.fillText(l, cx, qy); qy += fitQ.lineH; });
+
+  // Thin accent rule beneath the quote
+  const ruleY = qy + 22;
+  ctx.strokeStyle = accentColor; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(cx - 40, ruleY); ctx.lineTo(cx + 40, ruleY); ctx.stroke();
+
+  if (speakerOn) {
+    let ny = ruleY + 26;
+    if (speakerImg) {
+      const r = W * 0.055;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, ny + r, r, 0, Math.PI*2); ctx.clip();
+      drawCropped(ctx, speakerImg, cx - r, ny, r*2, r*2, 'cover');
+      ctx.restore();
+      ctx.lineWidth = 3; ctx.strokeStyle = accentColor;
+      ctx.beginPath(); ctx.arc(cx, ny + r, r, 0, Math.PI*2); ctx.stroke();
+      ny += r*2 + 16;
+    }
+    ctx.font = `800 26px ${fontFamily}, sans-serif`;
+    ctx.fillStyle = '#111'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(speakerName || 'Source Name', cx, ny);
+    ctx.font = '600 17px Inter, Arial'; ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillText(speakerTitle || '', cx, ny + 32);
+  }
+
+  ctx.font = '600 15px Inter, Arial'; ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`${socialHandle}   |   ${websiteStr}`, cx, H - 24);
+}
+
+// ── QUOTE BOLD renderer (full-bleed photo, dramatic oversized type) ──
+function drawQuoteBold(ctx, W, H, accentColor, accent2, fontFamily, fontSize, quoteText,
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, speakerOn, speakerName, speakerTitle) {
+
+  const filterMap = {
+    none: 'none', grayscale: 'grayscale(1) contrast(1.05)',
+    duotone: 'grayscale(1) contrast(1.15) brightness(0.95)',
+    vintage: 'sepia(0.55) contrast(1.05) saturate(1.1) brightness(0.95)',
+    contrast: 'contrast(1.3) saturate(1.25)', cool: 'saturate(1.1) hue-rotate(-12deg) brightness(0.95) contrast(1.1)'
+  };
+  ctx.filter = filterMap[photoFilter] || 'none';
+  const mainImg = images.filter(Boolean)[0];
+  if (mainImg) drawCropped(ctx, mainImg, 0, 0, W, H, imgFit);
+  else { ctx.fillStyle = '#1c1c20'; ctx.fillRect(0, 0, W, H); }
+  ctx.filter = 'none';
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(0,0,0,0.3)');
+  grad.addColorStop(0.45, 'rgba(0,0,0,0.4)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.92)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+  ctx.fillStyle = accentColor;
+  ctx.fillRect(0, 0, 10, H);
+
+  ctx.font = `800 ${Math.round(W*0.03)}px ${fontFamily}, sans-serif`;
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(channelName, W*0.055, H*0.045);
+  ctx.font = '600 15px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.75)';
+  ctx.textAlign = 'right';
+  ctx.fillText(dateStr, W - 28, H*0.05);
+
+  ctx.font = `800 ${Math.round(W*0.16)}px Georgia, serif`;
+  ctx.fillStyle = hexToRgba(accentColor, 0.9);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('\u201C', W*0.045, H*0.4);
+
+  const pad = W * 0.055;
+  const footY = H - H*0.09;
+  const nameBlockH = speakerOn ? 96 : 0;
+  const quoteBottom = footY - nameBlockH;
+  const quoteTop = H * 0.55;
+  const fitQ = fitTextBlock(ctx, quoteText, W - pad*2, quoteBottom - quoteTop, fontFamily, fontSize, { weight: '800', minSize: 26, lineHeightMult: 1.18 });
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  let qy = quoteBottom - fitQ.blockH;
+  fitQ.lines.forEach(l => { ctx.fillText(l, pad, qy); qy += fitQ.lineH; });
+
+  if (speakerOn) {
+    ctx.font = `800 24px ${fontFamily}, sans-serif`;
+    ctx.fillStyle = accentColor; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText((speakerName || 'Source Name').toUpperCase(), pad, footY + 8);
+    ctx.font = '600 16px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.fillText(speakerTitle || '', pad, footY + 34);
+  }
+
+  ctx.font = '600 14px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.textAlign = 'right'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`${socialHandle}  \u00B7  ${websiteStr}`, W - 28, H - 22);
+}
+
+// ── QUOTE SPLIT renderer (photo left / dark panel right, magazine-style) ──
+function drawQuoteSplit(ctx, W, H, accentColor, accent2, fontFamily, fontSize, quoteText,
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, speakerOn, speakerName, speakerTitle) {
+
+  const splitX = W * 0.42;
+  const filterMap = {
+    none: 'none', grayscale: 'grayscale(1) contrast(1.05)',
+    duotone: 'grayscale(1) contrast(1.15) brightness(0.95)',
+    vintage: 'sepia(0.55) contrast(1.05) saturate(1.1) brightness(0.95)',
+    contrast: 'contrast(1.3) saturate(1.25)', cool: 'saturate(1.1) hue-rotate(-12deg) brightness(0.95) contrast(1.1)'
+  };
+  ctx.save();
+  ctx.beginPath(); ctx.rect(0, 0, splitX, H); ctx.clip();
+  ctx.filter = filterMap[photoFilter] || 'none';
+  const photo = speakerImg || images.filter(Boolean)[0];
+  if (photo) drawCropped(ctx, photo, 0, 0, splitX, H, 'cover');
+  else { ctx.fillStyle = '#222'; ctx.fillRect(0, 0, splitX, H); }
+  ctx.filter = 'none';
+  const edgeGrad = ctx.createLinearGradient(splitX - 80, 0, splitX, 0);
+  edgeGrad.addColorStop(0, 'rgba(0,0,0,0)'); edgeGrad.addColorStop(1, 'rgba(0,0,0,0.35)');
+  ctx.fillStyle = edgeGrad; ctx.fillRect(splitX - 80, 0, 80, H);
+  ctx.restore();
+
+  const panelGrad = ctx.createLinearGradient(splitX, 0, W, H);
+  panelGrad.addColorStop(0, '#16161b'); panelGrad.addColorStop(1, '#09090c');
+  ctx.fillStyle = panelGrad;
+  ctx.fillRect(splitX, 0, W - splitX, H);
+
+  ctx.fillStyle = accentColor;
+  ctx.fillRect(splitX - 4, 0, 4, H);
+
+  const px = splitX + W*0.06;
+  const panelW = W - splitX - W*0.09;
+
+  ctx.font = `800 ${Math.round(W*0.024)}px ${fontFamily}, sans-serif`;
+  ctx.fillStyle = accent2; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(channelName, px, H*0.05);
+  ctx.font = '600 13px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.fillText(dateStr, px, H*0.05 + 28);
+
+  ctx.font = `800 ${Math.round(panelW*0.3)}px Georgia, serif`;
+  ctx.fillStyle = hexToRgba(accentColor, 0.85);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText('\u201C', px - 6, H*0.15);
+
+  const footY = H - H*0.1;
+  const nameBlockH = speakerOn ? 90 : 0;
+  const quoteTop = H * 0.33;
+  const availH = (footY - nameBlockH) - quoteTop;
+  const fitQ = fitTextBlock(ctx, quoteText, panelW, availH, fontFamily, fontSize, { weight: '700', minSize: 22, lineHeightMult: 1.3 });
+  ctx.fillStyle = '#f2f2f5'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  let qy = quoteTop;
+  fitQ.lines.forEach(l => { ctx.fillText(l, px, qy); qy += fitQ.lineH; });
+
+  if (speakerOn) {
+    const ny = qy + 18;
+    ctx.strokeStyle = accentColor; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(px, ny); ctx.lineTo(px + 50, ny); ctx.stroke();
+    ctx.font = `800 22px ${fontFamily}, sans-serif`; ctx.fillStyle = '#fff';
+    ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(speakerName || 'Source Name', px, ny + 14);
+    ctx.font = '600 15px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fillText(speakerTitle || '', px, ny + 42);
+  }
+
+  ctx.font = '600 14px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.textAlign = 'left'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`${socialHandle}  \u00B7  ${websiteStr}`, px, H - 26);
+}
+
+// ── QUOTE TESTIMONIAL renderer (floating card over a dimmed backdrop) ──
+function drawQuoteTestimonial(ctx, W, H, accentColor, accent2, fontFamily, fontSize, quoteText,
+  channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, speakerOn, speakerName, speakerTitle) {
+
+  const mainImg = images.filter(Boolean)[0];
+  if (mainImg) {
+    ctx.save();
+    ctx.filter = 'blur(22px) brightness(0.5) saturate(1.1)';
+    const scale = Math.max(W/mainImg.width, H/mainImg.height) * 1.15;
+    const iw = mainImg.width*scale, ih = mainImg.height*scale;
+    ctx.drawImage(mainImg, (W-iw)/2, (H-ih)/2, iw, ih);
+    ctx.filter = 'none';
+    ctx.restore();
+    ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.fillRect(0, 0, W, H);
+  } else {
+    const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0, shadeColor(accentColor, -60));
+    bgGrad.addColorStop(1, '#0c0c10');
+    ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+  }
+
+  ctx.font = `800 ${Math.round(W*0.028)}px ${fontFamily}, sans-serif`;
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.fillText(channelName, W*0.06, H*0.04);
+  ctx.font = '600 14px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.7)';
+  ctx.textAlign = 'right';
+  ctx.fillText(dateStr, W - 28, H*0.045);
+
+  const cardX = W * 0.08, cardW = W * 0.84;
+  const cardTop = H * 0.16, cardBottom = H * 0.88;
+  const cardH = cardBottom - cardTop;
+  const cx = W / 2;
+
+  ctx.save();
+  ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+  roundRect(ctx, cardX, cardTop, cardW, cardH, 26);
+  ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.restore();
+
+  const chipR = W * 0.045;
+  ctx.save();
+  ctx.shadowColor = hexToRgba(accentColor, 0.5); ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
+  ctx.beginPath(); ctx.arc(cx, cardTop, chipR, 0, Math.PI*2);
+  ctx.fillStyle = accentColor; ctx.fill();
+  ctx.restore();
+  ctx.font = `800 ${Math.round(chipR*1.3)}px Georgia, serif`;
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('\u201C', cx, cardTop + 2);
+
+  const innerPad = cardW * 0.1;
+  const footBlockH = speakerOn ? 130 : 40;
+  const quoteTop = cardTop + chipR + 34;
+  const availH = (cardBottom - footBlockH) - quoteTop;
+  const fitQ = fitTextBlock(ctx, quoteText, cardW - innerPad*2, availH, fontFamily, fontSize, { weight: '700', minSize: 22, lineHeightMult: 1.36 });
+  ctx.fillStyle = '#1c1c1c'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  let qy = quoteTop + Math.max(0, (availH - fitQ.blockH) / 2);
+  fitQ.lines.forEach(l => { ctx.fillText(l, cx, qy); qy += fitQ.lineH; });
+
+  if (speakerOn) {
+    let ny = cardBottom - footBlockH + 10;
+    if (speakerImg) {
+      const r = 32;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(cx, ny + r, r, 0, Math.PI*2); ctx.clip();
+      drawCropped(ctx, speakerImg, cx - r, ny, r*2, r*2, 'cover');
+      ctx.restore();
+      ctx.lineWidth = 3; ctx.strokeStyle = accentColor;
+      ctx.beginPath(); ctx.arc(cx, ny + r, r, 0, Math.PI*2); ctx.stroke();
+      ny += r*2 + 12;
+    }
+    ctx.font = `800 22px ${fontFamily}, sans-serif`; ctx.fillStyle = '#111';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    ctx.fillText(speakerName || 'Source Name', cx, ny);
+    ctx.font = '600 15px Inter, Arial'; ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.fillText(speakerTitle || '', cx, ny + 26);
+  }
+
+  ctx.font = '600 14px Inter, Arial'; ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+  ctx.fillText(`${socialHandle}  \u00B7  ${websiteStr}`, cx, H - 22);
+}
+
 // ── FRAME CARD renderer (modern floating photo-card template) ───────
 function drawFrameCard(ctx, W, H, accentColor, accent2, fontFamily, fontSize, headline,
   channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter, hlColor, badgeOn, badgeText, badgeShape) {
@@ -1707,7 +1987,7 @@ function generate() {
   const PHOTO_H = H - BRAND_H - AD_H - AD_GAP - HL_H;
 
   // ── Base background ──
-  if (layout === 'quote' || layout === 'light') {
+  if (layout === 'quote' || layout === 'quoteMinimal' || layout === 'light') {
     ctx.fillStyle = '#FBF1E3';
     ctx.fillRect(0, 0, W, H);
   } else {
@@ -1725,6 +2005,22 @@ function generate() {
 
   if (layout === 'quote') {
     drawQuoteCard(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
+      speakerOnVal, speakerNameVal, speakerTitleVal);
+  } else if (layout === 'quoteMinimal') {
+    drawQuoteMinimal(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
+      speakerOnVal, speakerNameVal, speakerTitleVal);
+  } else if (layout === 'quoteBold') {
+    drawQuoteBold(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
+      speakerOnVal, speakerNameVal, speakerTitleVal);
+  } else if (layout === 'quoteSplit') {
+    drawQuoteSplit(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
+      channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
+      speakerOnVal, speakerNameVal, speakerTitleVal);
+  } else if (layout === 'quoteTestimonial') {
+    drawQuoteTestimonial(ctx, W, H, accentColor, currentAccent2, fontFamily, fontSize, headline,
       channelName, socialHandle, websiteStr, dateStr, logoImg, imgFit, photoFilter,
       speakerOnVal, speakerNameVal, speakerTitleVal);
   } else if (layout === 'frame') {
